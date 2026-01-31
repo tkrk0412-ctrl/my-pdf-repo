@@ -7,6 +7,8 @@
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 500px; }
+        /* 初期状態ではメインコンテンツを隠しておく */
+        #mainContent { display: none; }
         input[type="file"] { margin: 20px 0; }
         button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
         #result { margin: 20px 0; padding: 10px; border-radius: 5px; }
@@ -17,7 +19,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="mainContent" class="container">
         <h1>📄 PDF保管庫</h1>
         <input type="file" id="fileInput" accept="application/pdf">
         <button onclick="uploadPDF()">アップロードしてURL発行</button>
@@ -33,14 +35,30 @@
 
     <script>
         const repo = "tkrk0412-ctrl/my-pdf-repo";
+        // ★ここにお好きな合言葉を設定してください
+        const SECRET_KEY = "あなたの決めた合言葉"; 
 
-        // ページを開いた時にGitHubからファイル一覧を取得して履歴を作る
+        // ページ読み込み時の処理
+        window.addEventListener('DOMContentLoaded', () => {
+            const password = prompt("合言葉を入力してください");
+            
+            if (password === SECRET_KEY) {
+                // 合言葉が正しければコンテンツを表示して履歴を読み込む
+                document.getElementById('mainContent').style.display = 'inline-block';
+                loadHistory();
+            } else {
+                alert("合言葉が違います");
+                document.body.innerHTML = "<h1>アクセス権がありません</h1>";
+            }
+        });
+
         async function loadHistory() {
             const listEl = document.getElementById('historyList');
             try {
                 const response = await fetch(`https://api.github.com/repos/${repo}/contents/`);
                 const files = await response.json();
                 
+                // PDFファイルだけを抽出して新しい順に並べる
                 const pdfFiles = files.filter(f => f.name.endsWith('.pdf'));
                 if (pdfFiles.length === 0) {
                     listEl.innerHTML = "<li>履歴はまだありません</li>";
@@ -82,15 +100,12 @@
 
                 if (response.ok) {
                     resultDiv.innerHTML = "✅ 保存完了！少し待つと履歴に出ます";
-                    setTimeout(loadHistory, 3000); // 3秒後に履歴を再読込
+                    setTimeout(loadHistory, 3000);
                 } else {
                     resultDiv.innerText = 'エラーが発生しました';
                 }
             };
         }
-
-        // 初回読み込み
-        loadHistory();
     </script>
 </body>
 </html>
