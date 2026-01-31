@@ -1,18 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <title>PDF Upload Center</title>
+    <meta charset="UTF-8">
+    <title>PDF URL Generator</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        .upload-box { border: 2px dashed #ccc; padding: 20px; border-radius: 10px; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block; max-width: 500px; }
+        input { margin: 20px 0; }
+        #result { margin-top: 20px; word-break: break-all; padding: 10px; }
+        .success { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>PDF URL Generator</h1>
-    <div class="upload-box">
-        <p>ここにPDFを置いてURLを発行したい（開発中）</p>
-        <input type="file" accept="application/pdf">
-        <button onclick="alert('ここから先はサーバーの知識が必要だよ！')">アップロード</button>
+    <div class="container">
+        <h1>PDFをURLに変換</h1>
+        <p>GitHubへ直接アップロードします</p>
+        <input type="file" id="fileInput" accept="application/pdf"><br>
+        <button onclick="uploadPDF()">アップロード開始</button>
+        <div id="result"></div>
     </div>
+
+    <script>
+        async function uploadPDF() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            const token = ""; // ←ここを書き換え！
+            const repo = "tkrk0412-ctrl/my-pdf-repo";
+
+            if (!fileInput.files.length) return alert('ファイルを選んでね');
+            const file = fileInput.files[0];
+            resultDiv.innerText = 'アップロード中...';
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const content = reader.result.split(',')[1];
+                const path = file.name;
+
+                const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: "Upload PDF via Web",
+                        content: content
+                    })
+                });
+
+                if (response.ok) {
+                    const url = `https://tkrk0412-ctrl.github.io/my-pdf-repo/${path}`;
+                    resultDiv.innerHTML = '<p class="success">成功！</p>URL:<br><a href="' + url + '" target="_blank">' + url + '</a>';
+                } else {
+                    resultDiv.innerText = 'エラーが発生しました。';
+                }
+            };
+        }
+    </script>
 </body>
 </html>
